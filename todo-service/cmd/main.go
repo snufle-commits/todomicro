@@ -36,8 +36,11 @@ func main() {
 
 	r := router.NewRouter(h)
 
-	log.Println("Starting server on :8080")
-	if err := r.Run(":8080"); err != nil {
+	const addr = "0.0.0.0:8082"
+
+	log.Printf("✅ Auth service running on %s", addr)
+
+	if err := r.Run(addr); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
 }

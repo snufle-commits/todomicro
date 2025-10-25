@@ -10,6 +10,7 @@ import (
 )
 
 func RequireAuth(c *gin.Context) {
+
 	tokenString, err := c.Cookie("Authorization")
 	if err != nil || tokenString == "" {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -17,8 +18,13 @@ func RequireAuth(c *gin.Context) {
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, nil
+		}
+
 		return []byte("gfdsgsfgfsg"), nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	})
 	if err != nil {
 		log.Println("JWT parse error:", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -37,11 +43,14 @@ func RequireAuth(c *gin.Context) {
 		return
 	}
 
-	userID, ok := claims["id"].(string)
+	idFloat, ok := claims["UserID"].(float64) // JWT сохраняет числа как float64
 	if !ok {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+	userID := uint(idFloat)
+
 	c.Set("UserID", userID)
+
 	c.Next()
 }

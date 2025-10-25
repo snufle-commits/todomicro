@@ -21,17 +21,20 @@ func main() {
 		log.Fatal("failed to create repository")
 	}
 
-	s := service.NewAuthService(repo)
-	if s == nil {
+	svc := service.NewAuthService(repo)
+	if svc == nil {
 		log.Fatal("failed to create service")
 	}
 
-	h := handler.NewAuthHandler(s)
+	h := handler.NewAuthHandler(svc)
 
 	r := router.NewRouter(h)
 
-	log.Println("Starting server on :8081")
-	if err := r.Run(":8081"); err != nil {
+	const addr = "0.0.0.0:8081"
+
+	log.Printf("✅ Auth service running on %s", addr)
+
+	if err := r.Run(addr); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
 }

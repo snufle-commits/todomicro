@@ -1,12 +1,15 @@
 version: "3.9"
 
 services:
+  # ------------------------
+  # AUTH SERVICE
+  # ------------------------
   auth:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8081"             # исправлено под реальный порт из логов
     environment:
       - DB_HOST=auth-db
       - DB_USER=authuser
@@ -14,14 +17,19 @@ services:
       - DB_NAME=authdbname
       - DB_PORT=5432
     depends_on:
-      - auth-db
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
 
+  # ------------------------
+  # TODO SERVICE
+  # ------------------------
   todo:
     build:
       context: ./todo-service
       dockerfile: Dockerfile
     ports:
-      - "8081:8081"
+      - "8082:8082"             # внутри контейнера 8081, наружу 8082
     environment:
       - DB_HOST=todo-db
       - DB_USER=todouser
@@ -29,12 +37,19 @@ services:
       - DB_NAME=tododbname
       - DB_PORT=5432
       - REDIS_ADDR=redis:6379
-      - AUTH_URL=http://auth:8080
+      - AUTH_URL=http://auth:8081
     depends_on:
-      - todo-db
-      - redis
-      - auth
+      todo-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      auth:
+        condition: service_started
+    restart: unless-stopped
 
+  # ------------------------
+  # AUTH DATABASE (Postgres)
+  # ------------------------
   auth-db:
     image: postgres:15
     environment:
@@ -42,10 +57,19 @@ services:
       POSTGRES_PASSWORD: authpassword
       POSTGRES_DB: authdbname
     ports:
-      - "9002:5432"   # если хочешь доступ с хоста через 9002
+      - "9002:5432"  # внешний порт для отладки
     volumes:
       - auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authuser -d authdbname"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
 
+  # ------------------------
+  # TODO DATABASE (Postgres)
+  # ------------------------
   todo-db:
     image: postgres:15
     environment:
@@ -53,15 +77,28 @@ services:
       POSTGRES_PASSWORD: todopassword
       POSTGRES_DB: tododbname
     ports:
-      - "9001:5432"   # если хочешь доступ с хоста через 9001
+      - "9001:5432"  # внешний порт для отладки
     volumes:
       - todo_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todouser -d tododbname"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
 
+  # ------------------------
+  # REDIS
+  # ------------------------
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    restart: always
 
+# ------------------------
+# NAMED VOLUMES
+# ------------------------
 volumes:
   auth_data:
   todo_data:

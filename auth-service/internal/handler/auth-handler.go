@@ -51,5 +51,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to sign in"})
 		return
 	}
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", service.TKN, 3600*72, "", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }

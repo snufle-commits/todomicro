@@ -8,7 +8,7 @@ import (
 
 func NewRouter(handler *handler.AuthHandler) *gin.Engine {
 	r := gin.Default()
-	api := r.Group("/auth")
+	api := r.Group("/")
 	{
 		api.POST("/login", handler.SignIn)
 		api.POST("/register", handler.SignUp)

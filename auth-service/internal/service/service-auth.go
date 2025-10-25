@@ -12,6 +12,7 @@ import (
 )
 
 var SECRET string = "gfdsgsfgfsg"
+var TKN string
 
 type AuthService struct {
 	repo repository.AuthRepository
@@ -46,11 +47,10 @@ func (s *AuthService) SignIn(email, password string) (string, error) {
 		"UserID": user.ID,
 		"exp":    time.Now().Add(time.Hour * 24).Unix(),
 	})
-
-	tokenString, err := token.SignedString([]byte(SECRET))
+	TokenString, err := token.SignedString([]byte(SECRET))
 	if err != nil {
 		return "", err
 	}
-
-	return tokenString, nil
+	TKN = TokenString
+	return TKN, nil
 }
